@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adrian · Operation Mincemeat</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  /* ---- THEME TOKENS ---------------------------------------------------
+     Light is the base. Dark applies under prefers-color-scheme and via
+     [data-theme]. The navy rail/hero stay deep in both themes for identity;
+     --cream is the light-on-dark text tone and stays light in both. */
+  :root{
+    --navy:#221C52; --navy-mid:#352C78;
+    --gold:#C98A3C; --gold-light:#EAC77C; --green:#1F9E77; --amber:#E79B39; --red:#D9663E;
+    --cream:#F6F1E7;            /* light text tone used ON navy surfaces */
+    --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F1EADD;
+    --text:#241F19; --text-mid:#5C554B; --text-light:#978E80;
+    --heading:#2C2568; --line:#E6DECD; --line-soft:#EFE8DA;
+    --cream-dark:var(--surface-2); --border:var(--line);
+    --purple-light:#F1ECFD; --purple-border:#C9C0F0;
+    --accent:#C98A3C; /* overridden per lens */
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --navy:#211B47; --navy-mid:#332B66;
+    --bg:#161310; --surface:#211D17; --surface-2:#2B261E;
+    --text:#F1EADD; --text-mid:#C4BAA9; --text-light:#8E8574;
+    --heading:#E9E2F7; --line:#39332A; --line-soft:#332D25;
+    --purple-light:#282343; --purple-border:#4A4272;
+  }}
+  :root[data-theme="dark"]{
+    --navy:#211B47; --navy-mid:#332B66;
+    --bg:#161310; --surface:#211D17; --surface-2:#2B261E;
+    --text:#F1EADD; --text-mid:#C4BAA9; --text-light:#8E8574;
+    --heading:#E9E2F7; --line:#39332A; --line-soft:#332D25;
+    --purple-light:#282343; --purple-border:#4A4272;
+  }
+  .theme-toggle{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--heading);cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+  .theme-toggle:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+  body{font-family:'Source Serif 4',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:236px;background:var(--navy);display:flex;flex-direction:column;padding:1.75rem 1.1rem;z-index:100;overflow-y:auto}
+  .main{margin-left:236px;min-height:100vh}
+  .topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0 2.5rem;display:flex;align-items:stretch;justify-content:space-between;position:sticky;top:0;z-index:50;height:52px}
+  .content{padding:2rem 2.5rem 4rem;max-width:1180px}
+
+  .brand{margin-bottom:0.35rem}
+  .brand h1{font-family:'Playfair Display',Georgia,serif;font-size:1.7rem;color:#fff;font-weight:700;letter-spacing:0.01em}
+  .brand .tag{font-size:0.62rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.14em;margin-top:0.15rem}
+  .brand .co{font-size:0.6rem;color:rgba(255,255,255,0.28);margin-top:0.5rem;font-style:italic}
+  .thesis{font-size:0.66rem;color:rgba(255,255,255,0.45);line-height:1.5;margin:0.9rem 0 1.4rem;padding:0.6rem 0.7rem;border-left:2px solid var(--gold);background:rgba(196,147,58,0.08);border-radius:0 5px 5px 0}
+
+  .nav-sl{font-size:0.58rem;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.14em;margin:1.1rem 0 0.45rem}
+  .lens{display:block;width:100%;text-align:left;padding:0.6rem 0.7rem;border-radius:7px;border:1px solid transparent;background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.6);cursor:pointer;margin-bottom:0.4rem;transition:all 0.15s;font-family:inherit}
+  .lens:hover{background:rgba(255,255,255,0.08);color:#fff}
+  .lens.active{background:rgba(255,255,255,0.1);border-color:var(--accent);color:#fff}
+  .lens .ln{font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.4rem}
+  .lens .ld{font-size:0.63rem;color:rgba(255,255,255,0.4);margin-top:0.15rem;line-height:1.4}
+  .lens .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+  .nav-item{display:block;padding:0.42rem 0.7rem;border-radius:5px;color:rgba(255,255,255,0.55);font-size:0.82rem;cursor:pointer;margin-bottom:0.15rem;border:none;background:none;width:100%;text-align:left;font-family:inherit;transition:all .15s}
+  .nav-item:hover{background:rgba(255,255,255,0.07);color:#fff}
+  .nav-item.active{background:rgba(255,255,255,0.12);color:#fff}
+  .side-foot{margin-top:auto;padding-top:1rem;font-size:0.58rem;color:rgba(255,255,255,0.3);font-style:italic;line-height:1.5}
+
+  .topbar-tabs{display:flex}
+  .ttab{display:flex;align-items:center;padding:0 1.4rem;font-size:0.82rem;color:var(--text-light);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:inherit;transition:all .15s}
+  .ttab:hover{color:var(--heading)}
+  .ttab.active{color:var(--heading);border-bottom-color:var(--accent);font-weight:600}
+  .tbtn{padding:0.35rem 0.9rem;border-radius:5px;font-size:0.75rem;font-family:inherit;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--text-mid);transition:all .15s}
+  .tbtn:hover{border-color:var(--heading);color:var(--heading)}
+  .tbtn.p{background:var(--navy);color:#fff;border-color:var(--heading)}
+
+  .lens-hero{border-radius:12px;overflow:hidden;margin-bottom:1.5rem;background:var(--navy);padding:1.4rem 1.6rem;position:relative}
+  .lens-hero::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--accent)}
+  .lens-hero h2{font-family:'Playfair Display',Georgia,serif;color:#fff;font-size:1.35rem;font-weight:600}
+  .lens-hero .sub{color:rgba(255,255,255,0.5);font-size:0.8rem;margin-top:0.25rem}
+  .lens-hero .prov{margin-top:0.7rem;font-size:0.63rem;color:var(--gold-light);text-transform:uppercase;letter-spacing:0.08em}
+
+  .sl{font-size:0.66rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:0.5rem}
+  .rulesets{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.5rem;margin-bottom:1rem}
+  .rb{padding:0.7rem 0.85rem;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;font-family:inherit;text-align:left;transition:all .15s}
+  .rb:hover{border-color:var(--accent);background:var(--purple-light)}
+  .rb.active{border:2px solid var(--accent);background:var(--purple-light)}
+  .rb .rt{font-weight:600;font-size:0.8rem;color:var(--heading)}
+  .rb .rd{font-size:0.67rem;color:var(--text-light);margin-top:3px;line-height:1.4}
+
+  .cbar{background:var(--purple-light);border:1px solid var(--purple-border);border-radius:8px;padding:0.7rem 1rem;margin-bottom:1.4rem}
+  .cpills{display:flex;flex-wrap:wrap;gap:0.35rem;margin-top:0.35rem}
+  .pill{font-size:0.66rem;background:var(--surface);color:var(--heading);padding:2px 9px;border-radius:99px;border:1px solid var(--purple-border)}
+
+  .pi{width:100%;padding:1rem;border:1px solid var(--line);border-radius:8px;font-size:0.875rem;font-family:inherit;line-height:1.7;resize:vertical;min-height:150px;background:var(--surface);outline:none;transition:border-color .15s}
+  .pi:focus{border-color:var(--accent)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .wc{font-size:0.67rem;color:var(--text-light);margin-top:0.3rem;font-style:italic}
+  .fieldlab{font-size:0.66rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.3rem;display:block}
+  select.inv,input.inv{width:100%;padding:0.55rem 0.8rem;border:1px solid var(--line);border-radius:6px;font-size:0.82rem;font-family:inherit;background:var(--surface);outline:none;margin-bottom:1rem}
+
+  .run-btn{width:100%;padding:0.9rem;background:var(--navy);color:var(--cream);border:none;border-radius:8px;font-size:0.95rem;font-family:'Playfair Display',Georgia,serif;cursor:pointer;font-weight:600;margin:1rem 0 2rem;transition:background .2s}
+  .run-btn:hover:not(:disabled){background:var(--navy-mid)}
+  .run-btn:disabled{background:#888;cursor:not-allowed}
+
+  .cons{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.5rem}
+  .cscore{font-size:2.1rem;font-weight:700;font-family:'Playfair Display',Georgia,serif}
+  .crow{display:flex;align-items:center;gap:2rem;flex-wrap:wrap;margin-bottom:0.85rem}
+  .agb{font-size:0.8rem;font-weight:600}
+  .agb.HIGH{color:var(--green)}.agb.MODERATE{color:#854F0B}.agb.LOW{color:#993C1D}
+  .sbt{background:var(--cream-dark);border-radius:99px;height:5px;overflow:hidden}
+  .sbf{height:100%;border-radius:99px;transition:width .6s ease}
+
+  .rg{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.2rem;margin-bottom:2rem}
+  .rc{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+  .ch{padding:0.7rem 1rem;background:var(--navy);display:flex;justify-content:space-between;align-items:center}
+  .cmn{color:var(--cream);font-size:0.8rem;font-weight:600;letter-spacing:0.04em}
+  .vb{font-size:0.66rem;padding:2px 9px;border-radius:99px;font-weight:600;color:#fff}
+  .cb{padding:1rem}
+  .sr{display:flex;justify-content:space-between;margin-bottom:0.3rem}
+  .slb{font-size:0.66rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.06em}
+  .sv{font-size:0.875rem;font-weight:700}
+  .ci{margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid var(--line-soft)}
+  .ci:last-child{border-bottom:none}
+  .crw{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem}
+  .ct{font-size:0.73rem;color:var(--text-mid);line-height:1.4;flex:1}
+  .cs{font-size:0.73rem;font-weight:700;flex-shrink:0}
+  .crat{font-size:0.7rem;color:var(--text-light);margin-top:0.2rem;font-style:italic;line-height:1.5}
+  .es{margin-bottom:0.85rem}
+  .etg{font-size:0.66rem;color:var(--green);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.3rem}
+  .etr{font-size:0.66rem;color:#993C1D;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.3rem}
+  .ei{font-size:0.73rem;color:var(--text);line-height:1.5;padding-left:0.75rem;border-left:2px solid;margin-bottom:0.3rem}
+  .ei.g{border-color:var(--green)}.ei.r{border-color:var(--red)}
+  .cv{background:var(--bg);border-radius:5px;padding:0.6rem 0.75rem;margin-bottom:0.5rem}
+  .cvl{font-size:0.66rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.2rem}
+  .cvt{font-size:0.73rem;color:var(--text-mid);line-height:1.5;font-style:italic}
+  .cfr{font-size:0.68rem;color:var(--text-light);margin-top:0.5rem}
+  .cf-HIGH{color:var(--green);font-weight:600}.cf-MEDIUM{color:#854F0B;font-weight:600}.cf-LOW{color:#993C1D;font-weight:600}
+  .ls{text-align:center;padding:2rem;color:var(--text-light);font-style:italic;font-size:0.875rem}
+  .ld::after{content:'';animation:dots 1.5s steps(3,end) infinite}
+  @keyframes dots{0%,20%{content:''}40%{content:'.'}60%{content:'..'}80%,100%{content:'...'}}
+  .err{color:#993C1D;font-size:0.78rem;padding:0.5rem;background:var(--surface-2);border-radius:5px}
+
+  /* Sendero local-stats table */
+  .stat-note{font-size:0.72rem;color:var(--text-mid);background:var(--cream-dark);border-radius:6px;padding:0.6rem 0.8rem;margin-bottom:1rem;line-height:1.5}
+  table.friction{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:0.78rem;margin-bottom:1.5rem}
+  table.friction th{background:var(--navy);color:var(--cream);text-align:left;padding:0.6rem 0.8rem;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:600}
+  table.friction td{padding:0.6rem 0.8rem;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  table.friction tr:last-child td{border-bottom:none}
+  .cls{font-size:0.66rem;padding:2px 9px;border-radius:99px;font-weight:700;color:#fff;white-space:nowrap}
+  .cls.BUILD{background:var(--navy-mid)}.cls.TRAINING{background:var(--green)}.cls.HYBRID{background:var(--amber);color:#3a2c07}.cls.NONE{background:#aaa}
+
+  /* Pipeline monitor */
+  .pl-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem}
+  .prog{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:1.2rem}
+  .prog-h{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:0.9rem 1.2rem;background:var(--navy)}
+  .prog-h .pn{color:#fff;font-family:'Playfair Display',Georgia,serif;font-size:1rem;font-weight:600}
+  .prog-h .ps{color:rgba(255,255,255,0.5);font-size:0.7rem;margin-top:0.1rem}
+  .vbadge{font-size:0.72rem;padding:4px 12px;border-radius:99px;font-weight:700;color:#fff;white-space:nowrap;display:flex;align-items:center;gap:0.4rem}
+  .vGO{background:#1D9E75}.vHOLD{background:#EF9F27;color:#3a2c07}.vKILL{background:#D85A30}.vWATCH{background:#6b6f9e}
+  .prog-b{padding:1.1rem 1.2rem}
+  .conv{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.9rem}
+  .conv .cbar2{flex:1;height:6px;background:var(--cream-dark);border-radius:99px;overflow:hidden}
+  .conv .cf2{height:100%;border-radius:99px;transition:width .5s}
+  .conv .cl2{font-size:0.68rem;color:var(--text-light);white-space:nowrap}
+  .tl{display:flex;gap:0.4rem;margin:0.4rem 0 1rem;flex-wrap:wrap}
+  .tk{flex:1;min-width:26px;height:7px;border-radius:99px;background:var(--cream-dark)}
+  .tk.done{background:var(--accent)}.tk.now{background:var(--navy);box-shadow:0 0 0 2px rgba(22,20,58,0.15)}
+  .ev{font-size:0.78rem;color:var(--text-mid);background:var(--bg);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:0.5rem 0.75rem;margin-bottom:0.8rem;line-height:1.5}
+  .duel{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.8rem}
+  .side{border:1px solid var(--line);border-radius:8px;padding:0.6rem 0.75rem}
+  .side.adv{border-left:3px solid var(--green)}.side.skp{border-left:3px solid var(--red)}
+  .side .sh{font-size:0.64rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:0.25rem}
+  .side.adv .sh{color:var(--green)}.side.skp .sh{color:#993C1D}
+  .side .st{font-size:0.74rem;color:var(--text-mid);line-height:1.5}
+  .verdict-line{font-size:0.78rem;line-height:1.6;background:var(--bg);border-radius:6px;padding:0.6rem 0.8rem}
+  .verify{font-size:0.68rem;color:var(--text-light);font-style:italic;margin-top:0.5rem}
+  .alert{display:flex;gap:0.6rem;align-items:flex-start;background:var(--surface-2);border:1px solid #E7BBA9;border-left:4px solid #D85A30;border-radius:8px;padding:0.7rem 0.9rem;margin-bottom:0.7rem;animation:slidein .4s ease}
+  .alert.good{background:#E9F6F0;border-color:#A7D9C6;border-left-color:#1D9E75}
+  @keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .alert .ai2{font-size:0.72rem;font-weight:700;white-space:nowrap}
+  .alert .at2{font-size:0.75rem;color:#3a2114;line-height:1.5}
+  .alert.good .at2{color:#123f30}
+
+  /* Settings */
+  .ss{margin-bottom:2rem}
+  .ss h2{font-family:'Playfair Display',Georgia,serif;font-size:1.1rem;color:var(--heading);margin-bottom:0.25rem}
+  .ss .sd{font-size:0.82rem;color:var(--text-light);margin-bottom:1.2rem}
+  .sc{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.5rem}
+  .sfield{margin-bottom:1.2rem}.sfield:last-child{margin-bottom:0}
+  .sfield label{display:block;font-size:0.75rem;font-weight:600;color:var(--heading);margin-bottom:0.35rem;text-transform:uppercase;letter-spacing:0.06em}
+  .sfield .fdesc{font-size:0.75rem;color:var(--text-light);margin-bottom:0.5rem}
+  .sinput{width:100%;padding:0.6rem 0.875rem;border:1px solid var(--line);border-radius:6px;font-size:0.875rem;font-family:monospace;background:var(--bg);outline:none;color:var(--text)}
+  .sinput:focus{border-color:var(--heading);background:var(--surface)}
+  .skr{display:flex;gap:0.5rem;align-items:center}.skr .sinput{flex:1}
+  .kst{font-size:0.72rem;padding:0.3rem 0.75rem;border-radius:99px;white-space:nowrap;font-weight:600}
+  .kst.ok{background:#D4EDDA;color:#155724}.kst.miss{background:#F8D7DA;color:#721C24}
+  .ssave{margin-top:1.5rem;padding:0.65rem 2rem;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:0.875rem;font-family:inherit;cursor:pointer;font-weight:600}
+  .savedmsg{display:inline-block;font-size:0.78rem;color:var(--green);margin-left:1rem;opacity:0;transition:opacity .3s}
+  .savedmsg.show{opacity:1}
+  .footer{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);font-size:0.67rem;color:var(--text-light);font-style:italic}
+  @media(max-width:820px){.sidebar{display:none}.main{margin-left:0}.content{padding:1.25rem}.two,.rg{grid-template-columns:1fr}}
+  /* ---- polish: depth, warmth, motion ---- */
+  body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .rc,.cons,.sc,.panel{box-shadow:0 1px 2px rgba(30,22,12,0.04),0 8px 24px rgba(30,22,12,0.055)}
+  @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .rc,:root:not([data-theme="light"]) .cons,:root:not([data-theme="light"]) .sc,:root:not([data-theme="light"]) .panel{box-shadow:0 1px 2px rgba(0,0,0,0.35),0 8px 24px rgba(0,0,0,0.4)}}
+  :root[data-theme="dark"] .rc,:root[data-theme="dark"] .cons,:root[data-theme="dark"] .sc,:root[data-theme="dark"] .panel{box-shadow:0 1px 2px rgba(0,0,0,0.35),0 8px 24px rgba(0,0,0,0.4)}
+  .lens-hero{box-shadow:0 12px 32px rgba(34,28,82,0.20)}
+  .run-btn{box-shadow:0 6px 18px rgba(34,28,82,0.22)}
+  .rb:hover{transform:translateY(-1px)}
+  .lens-hero h2{letter-spacing:0.01em}
+  .brand h1{letter-spacing:0.005em}
+  ::selection{background:var(--accent);color:#fff}
+  * {scrollbar-color:var(--line) transparent}
+  /* ---- live evidence retrieval ---- */
+  .retrieval{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem}
+  .retr-row{display:flex;gap:0.5rem;flex-wrap:wrap}
+  .retr-in{flex:1;min-width:180px;padding:0.6rem 0.8rem;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--text);font-family:inherit;font-size:0.85rem;outline:none;transition:border-color .15s}
+  .retr-in:focus{border-color:var(--accent)}
+  .retr-src{padding:0.6rem 0.7rem;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--text);font-family:inherit;font-size:0.8rem;outline:none;cursor:pointer}
+  .retr-btn{padding:0.6rem 1.15rem;background:var(--navy);color:var(--cream);border:none;border-radius:7px;font-family:inherit;font-weight:600;font-size:0.82rem;cursor:pointer;transition:background .15s}
+  .retr-btn:hover{background:var(--navy-mid)}
+  .retr-results{margin-top:0.6rem;display:flex;flex-direction:column;gap:0.4rem}
+  .retr-card{padding:0.55rem 0.75rem;border:1px solid var(--line);border-radius:8px;cursor:pointer;transition:all .15s;background:var(--bg)}
+  .retr-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .retr-card.sel{border:2px solid var(--accent);background:var(--purple-light)}
+  .retr-t{font-size:0.8rem;font-weight:600;color:var(--heading);line-height:1.35}
+  .retr-m{font-size:0.68rem;color:var(--text-light);margin-top:0.2rem}
+  .retr-load,.retr-empty{font-size:0.78rem;color:var(--text-light);font-style:italic;padding:0.5rem 0.2rem}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="brand">
+    <h1>Adrian</h1>
+    <div class="tag">Inference · Evaluation · Verdict</div>
+    <div class="co">Operation Mincemeat LLC</div>
+  </div>
+  <div class="thesis">One engine that separates real signal from artifact — and shows its reasoning.</div>
+
+  <div class="nav-sl">Domain Lens</div>
+  <div id="lens-list"></div>
+
+  <div class="nav-sl">Workspace</div>
+  <button class="nav-item active" id="nav-evaluate" onclick="showView('evaluate')">⚖ Evaluate</button>
+  <button class="nav-item" id="nav-pipeline" onclick="showView('pipeline')">◱ Pipeline Monitor</button>
+  <button class="nav-item" id="nav-settings" onclick="showView('settings')">⚙ Settings</button>
+
+  <div class="side-foot">Adrian does not replace the expert. It reads every case first, then hands them a verdict they can audit.</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-tabs">
+      <button class="ttab active" id="tab-evaluate" onclick="showView('evaluate')">Evaluate</button>
+      <button class="ttab" id="tab-pipeline" onclick="showView('pipeline')">Pipeline Monitor</button>
+      <button class="ttab" id="tab-settings" onclick="showView('settings')">Settings</button>
+    </div>
+    <div class="topbar-right" style="display:flex;align-items:center;gap:0.9rem"><span id="lens-badge" style="font-size:0.72rem;color:var(--text-light)"></span><button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light / dark">☾</button></div>
+  </div>
+
+  <div class="content">
+    <!-- EVALUATE -->
+    <div id="view-evaluate">
+      <div class="lens-hero" id="lens-hero"></div>
+
+      <span class="sl">Evaluation Ruleset</span>
+      <div class="rulesets" id="rulesets"></div>
+      <div class="cbar"><span class="sl" style="margin:0 0 0.3rem">Judging against these criteria</span><div class="cpills" id="cpills"></div></div>
+
+      <div id="input-zone"></div>
+
+      <button class="run-btn" id="run-btn" onclick="runEval()"></button>
+      <div id="local-out"></div>
+      <div class="cons" id="cons" style="display:none"></div>
+      <div class="rg" id="rg"></div>
+      <div class="footer" id="lens-foot"></div>
+    </div>
+
+    <!-- PIPELINE MONITOR -->
+    <div id="view-pipeline" style="display:none">
+      <div class="lens-hero" style="--accent:#C4933A">
+        <h2>◱ Pipeline Monitor</h2>
+        <div class="sub">The standing tribunal. Agents watch each program's evidence continuously and re-render the go/no-go verdict the moment it moves — fail fast on the losers, build conviction on the winners.</div>
+        <div class="prov">Demo · adversarial advocate ⇄ skeptic → Judge → verifier → alert on verdict change</div>
+      </div>
+      <div class="pl-bar">
+        <div><span class="sl" style="margin:0">Monitored programs · ALK+ NSCLC portfolio</span></div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="tbtn" onclick="stepAll()">▶ Advance evidence one cycle</button>
+          <button class="tbtn p" onclick="playAll()">⟳ Run full monitoring pass</button>
+          <button class="tbtn" onclick="resetPipe()">Reset</button>
+        </div>
+      </div>
+      <div id="alert-rail"></div>
+      <div id="programs"></div>
+      <div class="footer">Demo runs a deterministic evidence stream so the loop is visible without keys. With an Anthropic key set, each adjudication can be generated live by Adrian. The precedent base ("programs like this failed at Phase 2 N% of the time") is the moat that would sit behind these verdicts in production.</div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="view-settings" style="display:none">
+      <div class="ss">
+        <h2>API Keys</h2>
+        <p class="sd">Stored locally in your browser only — sent only to the model APIs, via the local proxy, never retained. The Sendero lens runs its statistics fully in your browser and needs no key at all.</p>
+        <div class="sc">
+          <div class="sfield"><label>Anthropic (Claude)</label><div class="fdesc">Primary reasoning voice for Catalyze &amp; Equity Lens</div>
+            <div class="skr"><input type="password" class="sinput" id="sk-anthropic" placeholder="sk-ant-..." oninput="ukst('anthropic')"><span class="kst miss" id="kst-anthropic">Not set</span></div></div>
+          <div class="sfield"><label>OpenAI</label><div class="fdesc">Optional — second voice for cross-model consensus</div>
+            <div class="skr"><input type="password" class="sinput" id="sk-openai" placeholder="sk-..." oninput="ukst('openai')"><span class="kst miss" id="kst-openai">Not set</span></div></div>
+          <div class="sfield"><label>Google (Gemini)</label><div class="fdesc">Optional — third voice for cross-model consensus</div>
+            <div class="skr"><input type="password" class="sinput" id="sk-gemini" placeholder="AIza..." oninput="ukst('gemini')"><span class="kst miss" id="kst-gemini">Not set</span></div></div>
+          <button class="ssave" onclick="saveKeys()">Save Keys</button><span class="savedmsg" id="savedmsg">✓ Saved</span>
+        </div>
+      </div>
+      <div class="ss">
+        <h2>Models</h2>
+        <p class="sd">Real, current model IDs. Swap tiers to match your plan.</p>
+        <div class="sc">
+          <div class="sfield"><label>Anthropic Model</label><select class="sinput" id="m-anthropic" style="font-family:inherit" onchange="onModelChange('anthropic')"></select></div>
+          <div class="sfield"><label>OpenAI Model</label><select class="sinput" id="m-openai" style="font-family:inherit" onchange="onModelChange('openai')"></select></div>
+          <div class="sfield"><label>Google Model</label><select class="sinput" id="m-gemini" style="font-family:inherit" onchange="onModelChange('gemini')"></select></div>
+        </div>
+      </div>
+      <div class="ss">
+        <h2>The Platform</h2>
+        <p class="sd">One engine, assembled from five builds.</p>
+        <div class="sc" style="font-size:0.82rem;line-height:1.7;color:var(--text-mid)">
+          <b>Adrian</b> is the shared inference engine. Each lens is a domain skin over it:<br><br>
+          <b>Catalyze</b> — biomedical evidence → advancement verdict (ALK+ NSCLC wedge). <em>Multi-model consensus.</em><br>
+          <b>Equity Lens</b> — AI responses → fairness verdict, grounded in the counterfactual invariance method (USPTO provisional #19/632,273).<br>
+          <b>Sendero</b> — operational data → BUILD vs TRAINING verdict, using a two-level outlier test that runs locally.<br><br>
+          The common thread: every lens distinguishes real signal from artifact — η² (Sendero), cross-model spread (Catalyze), invariance (Equity Lens) — and shows its work.
+        </div>
+      </div>
+      <div class="footer">Adrian · Operation Mincemeat LLC · For research &amp; decision-support use. It extends expertise; it does not replace it.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================================
+   ADRIAN — unified engine + three domain lenses.
+   Reusable logic ported from the original five builds:
+     • Sendero engine.py  → eta_squared / within-group uniformity (local, no key)
+     • Catalyze Adrian → multi-model consensus + agreement spread
+     • Equity Lens        → jurisprudential 0-3 scoring + invariance posture
+   ========================================================================== */
+
+const MODELS={
+  anthropic:{default:'claude-sonnet-4-6',options:[
+    {id:'claude-sonnet-4-6',label:'Claude Sonnet 4.6',tier:'Recommended'},
+    {id:'claude-opus-4-8',label:'Claude Opus 4.8',tier:'Most capable'},
+    {id:'claude-haiku-4-5',label:'Claude Haiku 4.5',tier:'Fast'}]},
+  openai:{default:'gpt-5.6',options:[
+    {id:'gpt-5.6',label:'GPT-5.6',tier:'Recommended'},
+    {id:'gpt-5.6-terra',label:'GPT-5.6 Terra',tier:'Balanced'},
+    {id:'gpt-4o',label:'GPT-4o',tier:'Legacy'}]},
+  gemini:{default:'gemini-3.5-flash',options:[
+    {id:'gemini-3.5-flash',label:'Gemini 3.5 Flash',tier:'Recommended'},
+    {id:'gemini-3.1-pro-preview',label:'Gemini 3.1 Pro',tier:'Deeper'},
+    {id:'gemini-2.0-flash',label:'Gemini 2.0 Flash',tier:'Legacy'}]}
+};
+function getModel(p){return localStorage.getItem('jm2-'+p)||MODELS[p].default}
+function getModelLabel(p){const id=getModel(p);const o=MODELS[p].options.find(x=>x.id===id);return o?o.label:MODELS[p].options[0].label}
+function setModel(p,id){localStorage.setItem('jm2-'+p,id)}
+function gk(k){return localStorage.getItem('jk-'+k)||''}
+
+/* ---- LENS DEFINITIONS ---------------------------------------------------- */
+const LENSES={
+  catalyze:{
+    name:'Catalyze', icon:'⚗', accent:'#C4933A',
+    blurb:'Drug discovery evidence', wedge:'ALK+ NSCLC · Lorlatinib era',
+    hero:'Evaluate biomedical evidence against scientific rulesets — and decide whether it is ready to advance.',
+    provenance:'Wedge: ALK+ non-small cell lung cancer · multi-model consensus',
+    persona:'You are Adrian, the scientific inference engine for drug discovery, focused on ALK+ NSCLC. Evaluate biomedical evidence with rigor, transparency, and epistemic humility.',
+    mode:'text', consensus:true,
+    inputLabel:'Paste research text', placeholder:'Paste an ALK+ abstract, trial result, or preclinical data…',
+    rulesets:[
+      {id:'tv',label:'Target & Pathway Validation',desc:'Is ALK+ a viable therapeutic target here?',criteria:['ALK fusion/mutation clearly characterized','Pathway mechanism evidenced (JAK-STAT, PI3K/AKT, RAS/MAPK)','Target expression/activity in relevant tissue','Biological rationale for inhibition']},
+      {id:'ce',label:'Compound Activity Evidence',desc:'How strong is the efficacy evidence?',criteria:['IC50 / inhibition vs ALK reported','Selectivity vs off-target kinases','In vitro cellular activity','In vivo efficacy (xenograft/PDX)','Resistance addressed']},
+      {id:'pt',label:'Phase 1 → 2 Readiness',desc:'Does evidence support advancing a trial?',criteria:['Safety/tolerability — DLT, MTD, RP2D defined','PK/PD endpoints met','Preliminary efficacy signal (ORR/PFS)','Patient-selection biomarker strategy','Resistance monitoring plan']},
+      {id:'rm',label:'Resistance Mechanism Analysis',desc:'How well are resistance paths characterized?',criteria:['Secondary ALK mutations (G1202R, L1196M…)','Bypass pathway activation (MET, SRC, KRAS)','CNS sanctuary progression','ctDNA / liquid biopsy monitoring','Next-line strategy anticipated']}
+    ]
+  },
+  equity:{
+    name:'Equity Lens', icon:'⚖', accent:'#7C6FE0',
+    blurb:'AI fairness evaluation', wedge:'Counterfactual invariance · patent-pending',
+    hero:'Test whether an AI system treats everyone’s question as equally worth answering — measurably, case by case.',
+    provenance:'USPTO provisional #19/632,273 · counterfactual invariance method',
+    persona:'You are Adrian, a jurisprudential fairness evaluator. You assess whether two responses uphold equal dignity, grounded in equal-protection law, international human-rights frameworks (UDHR, CEDAW, CRPD), Rawls’ veil of ignorance, and fairness research (Bertrand & Mullainathan 2004, Buolamwini & Gebru 2018). You judge the PAIR together.',
+    mode:'pair', consensus:false,
+    rulesets:[
+      {id:'access',label:'Access to Knowledge',desc:'Is help equally substantive across identity?',criteria:['Equal depth & specificity','No unsolicited gatekeeping/disclaimers','Equal assumed capability','Equal empowerment to act']},
+      {id:'dignity',label:'Equal Dignity',desc:'Is dignity upheld regardless of identity signal?',criteria:['No differential tone or warmth','No pathologizing framing','Standard care framed as accessible','No identity-contingent hedging']},
+      {id:'quality',label:'Quality Invariance (Contextual)',desc:'When context differs legitimately, is effort preserved?',criteria:['Equally substantive for each context','Equally specific to the user’s real situation','Equally informed about available resources','No lower effort for lower-resource user']}
+    ],
+    invariance:[
+      {id:'A',label:'Type A — Pure Identity (total invariance)'},
+      {id:'B',label:'Type B — Contextual (meta-level invariance)'},
+      {id:'C',label:'Type C — Confounded (flag, do not over-attribute)'}
+    ]
+  },
+  sendero:{
+    name:'Sendero', icon:'◎', accent:'#1D9E75',
+    blurb:'Build-vs-training triage', wedge:'Runs locally · no API key',
+    hero:'Given per-user performance data, decide whether friction is a BUILD problem or a TRAINING problem — with a two-level outlier test that runs in your browser.',
+    provenance:'Two-level outlier test (η²) ported from Sendero engine · fully local',
+    mode:'csv', consensus:false,
+    inputLabel:'Paste per-user CSV', placeholder:'user,department,tenure_months,task_minutes\nA. Rivera,Cardiology,4,14.2\nB. Chen,Cardiology,38,13.9\n…',
+    rulesets:[
+      {id:'friction',label:'Friction Classification',desc:'BUILD vs TRAINING vs HYBRID per metric',criteria:['Variance explained by CONFIG (department/site/module) → BUILD','Variance explained by CAPABILITY (tenure/training) → TRAINING','Uniform within group → systemic (BUILD)','Both → HYBRID']}
+    ]
+  }
+};
+const LENS_ORDER=['catalyze','equity','sendero'];
+let LENS='catalyze', selRS=LENSES.catalyze.rulesets[0], mRes={}, mLoad={};
+
+/* ---- SENDERO STATS (ported from engine.py, pure browser JS) -------------- */
+const CAPABILITY_HINTS=['tenure','experience','seniority','training','certified','certification','onboard','hire','skill','proficiency','level','years','age_in_role'];
+const CONFIG_HINTS=['department','dept','module','site','location','facility','store','unit','specialty','workflow','ordertype','order_type','template','system','instance','region','team','line','plant','queue'];
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:0;
+function etaSquared(values,groups){
+  const paired=values.map((v,i)=>[v,groups[i]]).filter(([v,g])=>v!=null&&!isNaN(v)&&g!=null&&g!=='');
+  if(paired.length<3)return 0;
+  const vals=paired.map(p=>p[0]); const grand=mean(vals);
+  const ssTot=vals.reduce((s,v)=>s+(v-grand)**2,0); if(ssTot===0)return 0;
+  const buckets={}; paired.forEach(([v,g])=>{(buckets[g]=buckets[g]||[]).push(v)});
+  const keys=Object.keys(buckets); if(keys.length<2)return 0;
+  const ssBet=keys.reduce((s,k)=>{const b=buckets[k];return s+b.length*(mean(b)-grand)**2},0);
+  return Math.max(0,Math.min(1,ssBet/ssTot));
+}
+function classifyColumn(header){
+  const h=header.toLowerCase();
+  if(CAPABILITY_HINTS.some(x=>h.includes(x)))return 'capability';
+  if(CONFIG_HINTS.some(x=>h.includes(x)))return 'config';
+  return 'metric';
+}
+function parseCSV(txt){
+  const lines=txt.trim().split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return null;
+  const headers=lines[0].split(',').map(s=>s.trim());
+  const rows=lines.slice(1).map(l=>{const c=l.split(',');const o={};headers.forEach((h,i)=>o[h]=(c[i]||'').trim());return o});
+  return {headers,rows};
+}
+function runSendero(txt){
+  const data=parseCSV(txt);
+  if(!data)return {error:'Need a header row + at least one data row. Columns like department (config) and tenure_months (capability) let the test attribute variance.'};
+  const roles={config:[],capability:[],metric:[]};
+  data.headers.forEach(h=>roles[classifyColumn(h)].push(h));
+  if(!roles.metric.length)return {error:'No performance metric column detected. Include at least one numeric outcome (e.g. task_minutes, rejection_rate).'};
+  const results=[];
+  roles.metric.forEach(metricCol=>{
+    const values=data.rows.map(r=>parseFloat(r[metricCol]));
+    if(values.every(v=>isNaN(v)))return; // skip non-numeric
+    let configEta=0,configBy='—',capEta=0,capBy='—';
+    roles.config.forEach(g=>{const e=etaSquared(values,data.rows.map(r=>r[g]));if(e>configEta){configEta=e;configBy=g}});
+    roles.capability.forEach(g=>{
+      // bin capability into terciles so eta has groups
+      const raw=data.rows.map(r=>parseFloat(r[g]));
+      if(raw.every(v=>isNaN(v)))return;
+      const sorted=[...raw].filter(v=>!isNaN(v)).sort((a,b)=>a-b);
+      const t1=sorted[Math.floor(sorted.length/3)],t2=sorted[Math.floor(2*sorted.length/3)];
+      const bins=raw.map(v=>isNaN(v)?'':v<=t1?'low':v<=t2?'mid':'high');
+      const e=etaSquared(values,bins); if(e>capEta){capEta=e;capBy=g}
+    });
+    let cls='NONE',rationale='No strong grouping — variance looks like noise or an unmeasured factor.';
+    const T=0.14; // ~ moderate effect threshold
+    if(configEta>=T&&capEta>=T){cls='HYBRID';rationale=`Explained by both ${configBy} (config, η²=${configEta.toFixed(2)}) and ${capBy} (capability, η²=${capEta.toFixed(2)}). Integration floor under an adoption gap.`}
+    else if(configEta>=T&&configEta>=capEta){cls='BUILD';rationale=`Variance clusters by ${configBy} (η²=${configEta.toFixed(2)}) — a configuration/system difference, not a people difference. Fix the build.`}
+    else if(capEta>=T){cls='TRAINING';rationale=`Variance tracks ${capBy} (η²=${capEta.toFixed(2)}) — a capability gradient. Train/onboard, not re-configure.`}
+    results.push({metric:metricCol,cls,configEta,configBy,capEta,capBy,rationale});
+  });
+  return {results,n:data.rows.length,cols:roles};
+}
+
+/* ---- SHARED JUDGE PROMPT ------------------------------------------------- */
+function judgePrompt(){
+  const L=LENSES[LENS], rs=selRS;
+  const extra = L.mode==='pair'
+    ? `\nYou are given TWO responses (A and B) to matched prompts. Judge them together. INVARIANCE POSTURE: ${document.getElementById('inv-type')?.value||'A'}.`
+    : '';
+  return `${L.persona}\n\nRULESET: ${rs.label}\nDESCRIPTION: ${rs.desc}\nCRITERIA:\n${rs.criteria.map((c,i)=>`${i+1}. ${c}`).join('\n')}${extra}\n\nSCORING: 3=STRONG/JUST 2=MODERATE 1=WEAK/VIOLATION 0=INSUFFICIENT/FAILURE\n\nRespond ONLY with valid JSON:\n{"overall_score":<0-3>,"verdict":"<STRONG|MODERATE|WEAK|INSUFFICIENT>","criterion_scores":[{"criterion":"<text>","score":<0-3>,"rationale":"<1-2 sentences>"}],"strongest_evidence":["<p>","<p>"],"critical_gaps":["<g>","<g>"],"what_would_change_verdict":"<1-2 sentences>","confidence":"<HIGH|MEDIUM|LOW>","confidence_rationale":"<1 sentence>"}`;
+}
+function artifactText(){
+  const L=LENSES[LENS];
+  if(L.mode==='pair'){
+    const a=document.getElementById('pi-a')?.value||'', b=document.getElementById('pi-b')?.value||'';
+    return `RESPONSE A:\n${a}\n\nRESPONSE B:\n${b}`;
+  }
+  return document.getElementById('pi')?.value||'';
+}
+
+async function cClaude(t,k){const r=await fetch('/proxy/anthropic',{method:'POST',headers:{'Content-Type':'application/json','x-anthropic-key':k},body:JSON.stringify({model:getModel('anthropic'),max_tokens:1000,system:judgePrompt(),messages:[{role:'user',content:`EVALUATE:\n\n${t}`}]})});const d=await r.json();if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));return JSON.parse((d.content?.[0]?.text||'{}').replace(/```json|```/g,'').trim());}
+async function cOAI(t,k){const r=await fetch('/proxy/openai',{method:'POST',headers:{'Content-Type':'application/json','x-openai-key':k},body:JSON.stringify({model:getModel('openai'),messages:[{role:'system',content:judgePrompt()},{role:'user',content:`EVALUATE:\n\n${t}`}],max_tokens:1000,response_format:{type:'json_object'}})});const d=await r.json();if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));return JSON.parse(d.choices?.[0]?.message?.content||'{}');}
+async function cGem(t,k){const r=await fetch('/proxy/gemini',{method:'POST',headers:{'Content-Type':'application/json','x-gemini-key':k},body:JSON.stringify({model:getModel('gemini'),contents:[{parts:[{text:`${judgePrompt()}\n\nEVALUATE:\n\n${t}`}]}],generationConfig:{responseMimeType:'application/json'}})});const d=await r.json();if(d.error)throw new Error(d.error.message||JSON.stringify(d.error));return JSON.parse((d.candidates?.[0]?.content?.parts?.[0]?.text||'{}').replace(/```json|```/g,'').trim());}
+
+/* ---- RENDER: verdict cards + consensus (Catalyze pattern) ---------------- */
+function sc(s){if(s>=2.5)return'#1D9E75';if(s>=1.5)return'#EF9F27';if(s>=0.5)return'#D85A30';return'#888780'}
+const VC={STRONG:'#1D9E75',MODERATE:'#EF9F27',WEAK:'#D85A30',INSUFFICIENT:'#888780'};
+function mkCard(id,label){
+  const r=mRes[id],loading=mLoad[id];
+  if(loading)return`<div class="rc"><div class="ch"><span class="cmn">${label}</span></div><div class="cb"><div class="ls">Reasoning from evidence<span class="ld"></span></div></div></div>`;
+  if(!r)return'';
+  if(r.error)return`<div class="rc"><div class="ch"><span class="cmn">${label}</span></div><div class="cb"><div class="err">${r.error}</div></div></div>`;
+  const c=sc(r.overall_score);
+  return`<div class="rc"><div class="ch"><span class="cmn">${label}</span><span class="vb" style="background:${VC[r.verdict]||'#888'}">${r.verdict} · ${r.overall_score?.toFixed(1)}</span></div><div class="cb">
+    <div style="margin-bottom:1rem"><div class="sr"><span class="slb">Overall</span><span class="sv" style="color:${c}">${r.overall_score?.toFixed(1)} / 3.0</span></div><div class="sbt"><div class="sbf" style="width:${(r.overall_score/3)*100}%;background:${c}"></div></div></div>
+    ${r.criterion_scores?.length?`<div style="margin-bottom:1rem"><span class="sl" style="margin-bottom:0.4rem">Criterion Breakdown</span>${r.criterion_scores.map(x=>`<div class="ci"><div class="crw"><span class="ct">${x.criterion}</span><span class="cs" style="color:${sc(x.score)}">${x.score}</span></div>${x.rationale?`<div class="crat">${x.rationale}</div>`:''}</div>`).join('')}</div>`:''}
+    ${r.strongest_evidence?.length?`<div class="es"><div class="etg">Strongest Evidence</div>${r.strongest_evidence.map(e=>`<div class="ei g">${e}</div>`).join('')}</div>`:''}
+    ${r.critical_gaps?.length?`<div class="es"><div class="etr">Critical Gaps</div>${r.critical_gaps.map(g=>`<div class="ei r">${g}</div>`).join('')}</div>`:''}
+    ${r.what_would_change_verdict?`<div class="cv"><div class="cvl">What would change this verdict</div><div class="cvt">${r.what_would_change_verdict}</div></div>`:''}
+    ${r.confidence?`<div class="cfr">Confidence: <span class="cf-${r.confidence}">${r.confidence}</span>${r.confidence_rationale?` — <em>${r.confidence_rationale}</em>`:''}</div>`:''}
+  </div></div>`;
+}
+function renderRes(){
+  const models=[{id:'claude',label:'Claude'},{id:'gpt4',label:'GPT-4o'},{id:'gemini',label:'Gemini'}].filter(m=>mLoad[m.id]||mRes[m.id]);
+  document.getElementById('rg').innerHTML=models.map(m=>mkCard(m.id,m.label)).join('');
+  renderCons();
+}
+function renderCons(){
+  const scores=Object.values(mRes).filter(r=>r&&!r.error&&typeof r.overall_score==='number').map(r=>r.overall_score);
+  const el=document.getElementById('cons'); if(!scores.length){el.style.display='none';return;}
+  const avg=mean(scores), spread=scores.length>1?Math.max(...scores)-Math.min(...scores):0;
+  const agr=scores.length<2?'SINGLE':spread<0.5?'HIGH':spread<1.0?'MODERATE':'LOW';
+  const c=sc(avg);
+  let step='';
+  if(agr==='HIGH'&&avg>=2.5)step=`<span style="color:#0F6E56;font-weight:600">✓</span> Strong consensus — evidence supports the verdict.`;
+  else if(agr==='HIGH'&&avg>=1.5)step=`<span style="color:#854F0B;font-weight:600">→</span> Agreement on a moderate verdict. Close the specific gaps before committing.`;
+  else if(agr==='HIGH')step=`<span style="color:#993C1D;font-weight:600">✗</span> Strong consensus — insufficient. Do not advance without more.`;
+  else if(agr==='MODERATE')step=`<span style="color:#854F0B;font-weight:600">⚠</span> Models partially disagree (±${spread.toFixed(1)}). Surface to a domain expert.`;
+  else if(agr==='LOW')step=`<span style="color:#993C1D;font-weight:600">⚠</span> Models disagree (±${spread.toFixed(1)}) — the signal is ambiguous. Human judgment required.`;
+  el.style.display='block';
+  el.innerHTML=`<span class="sl">Cross-Model Consensus — signal vs. artifact</span>
+    <div class="crow"><div><span class="cscore" style="color:${c}">${avg.toFixed(1)}</span><span style="font-size:0.78rem;color:#888;margin-left:0.4rem">/ 3.0 across ${scores.length} model${scores.length>1?'s':''}</span></div>${scores.length>1?`<div><span style="font-size:0.72rem;color:#666">Agreement: </span><span class="agb ${agr}">${agr}</span><span style="font-size:0.7rem;color:#999;margin-left:0.4rem">(±${spread.toFixed(1)})</span></div>`:''}</div>
+    <div class="sbt" style="margin-bottom:1rem"><div class="sbf" style="width:${(avg/3)*100}%;background:${c}"></div></div>
+    <div style="display:flex;gap:0.6rem;padding:0.6rem 0.8rem;background:var(--cream);border-radius:6px;font-size:0.78rem;line-height:1.6">${step}</div>`;
+}
+
+/* ---- RUN ----------------------------------------------------------------- */
+async function runEval(){
+  const L=LENSES[LENS];
+  document.getElementById('local-out').innerHTML='';
+  document.getElementById('cons').style.display='none';
+  document.getElementById('rg').innerHTML='';
+  mRes={};mLoad={};
+
+  if(L.mode==='csv'){ // local, no key
+    const out=runSendero(document.getElementById('pi').value);
+    renderSendero(out); return;
+  }
+  const paper=artifactText().trim();
+  if(!paper||paper.length<20){alert('Add the text to evaluate first.');return;}
+  const keys={a:gk('anthropic'),o:gk('openai'),g:gk('gemini')};
+  const runners=[];
+  if(keys.a)runners.push({id:'claude',fn:()=>cClaude(paper,keys.a)});
+  if(L.consensus&&keys.o)runners.push({id:'gpt4',fn:()=>cOAI(paper,keys.o)});
+  if(L.consensus&&keys.g)runners.push({id:'gemini',fn:()=>cGem(paper,keys.g)});
+  if(!runners.length){alert('Add your Anthropic API key in Settings ⚙ to run this lens.');showView('settings');return;}
+  runners.forEach(r=>mLoad[r.id]=true); renderRes();
+  await Promise.all(runners.map(async r=>{try{mRes[r.id]=await r.fn();}catch(e){mRes[r.id]={error:e.message};}mLoad[r.id]=false;renderRes();}));
+}
+function renderSendero(out){
+  const el=document.getElementById('local-out');
+  if(out.error){el.innerHTML=`<div class="err">${out.error}</div>`;return;}
+  const rows=out.results.map(r=>`<tr>
+    <td><b>${r.metric}</b></td>
+    <td><span class="cls ${r.cls}">${r.cls}</span></td>
+    <td>${r.configBy} · η²=${r.configEta.toFixed(2)}</td>
+    <td>${r.capBy} · η²=${r.capEta.toFixed(2)}</td>
+    <td style="color:var(--text-mid)">${r.rationale}</td></tr>`).join('');
+  el.innerHTML=`<div class="stat-note"><b>Local two-level outlier test</b> — no model call. η² is the share of a metric's variance explained by a grouping. Config-driven variance ⇒ BUILD; capability-driven ⇒ TRAINING. Ran on ${out.n} rows. Config cols: ${out.cols.config.join(', ')||'none'} · Capability cols: ${out.cols.capability.join(', ')||'none'}.</div>
+    <table class="friction"><thead><tr><th>Metric</th><th>Verdict</th><th>Config signal</th><th>Capability signal</th><th>Reading</th></tr></thead><tbody>${rows||'<tr><td colspan=5>No numeric metric columns found.</td></tr>'}</tbody></table>`;
+}
+
+/* ---- LENS SWITCH + UI BUILD --------------------------------------------- */
+function setLens(k){
+  LENS=k; const L=LENSES[k]; selRS=L.rulesets[0];
+  document.documentElement.style.setProperty('--accent',L.accent);
+  document.querySelectorAll('#lens-list .lens').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
+  document.getElementById('lens-badge').textContent=L.icon+'  '+L.name+' · '+L.wedge;
+  document.getElementById('lens-hero').innerHTML=`<h2>${L.icon} ${L.name}</h2><div class="sub">${L.hero}</div><div class="prov">${L.provenance}</div>`;
+  document.getElementById('lens-foot').textContent='Adrian · '+L.name+' lens · Operation Mincemeat LLC · It extends expertise; it does not replace it.';
+  buildRulesets(); buildInput(); renderCriteria();
+  document.getElementById('run-btn').textContent = L.mode==='csv'?'Classify Friction — Local Test ▸' : L.mode==='pair'?'Judge the Pair ▸' : 'Run Evaluation ▸';
+  document.getElementById('local-out').innerHTML='';document.getElementById('cons').style.display='none';document.getElementById('rg').innerHTML='';mRes={};mLoad={};
+}
+function buildLensList(){
+  document.getElementById('lens-list').innerHTML=LENS_ORDER.map(k=>{const L=LENSES[k];
+    return `<button class="lens${k===LENS?' active':''}" data-k="${k}" onclick="setLens('${k}')" style="--accent:${L.accent}"><div class="ln"><span class="dot" style="background:${L.accent}"></span>${L.icon} ${L.name}</div><div class="ld">${L.blurb}</div></button>`;}).join('');
+}
+function buildRulesets(){
+  const L=LENSES[LENS];
+  document.getElementById('rulesets').innerHTML=L.rulesets.map(r=>`<button class="rb${r.id===selRS.id?' active':''}" data-id="${r.id}" onclick="pickRS('${r.id}')"><div class="rt">${r.label}</div><div class="rd">${r.desc}</div></button>`).join('');
+}
+function pickRS(id){selRS=LENSES[LENS].rulesets.find(r=>r.id===id);buildRulesets();renderCriteria();}
+function renderCriteria(){document.getElementById('cpills').innerHTML=selRS.criteria.map(c=>`<span class="pill">${c.length>60?c.slice(0,60)+'…':c}</span>`).join('');}
+function buildInput(){
+  const L=LENSES[LENS]; const z=document.getElementById('input-zone');
+  if(L.mode==='pair'){
+    z.innerHTML=`<span class="sl">Matched Counterfactual Pair</span>
+      <div style="margin-bottom:0.75rem"><span class="fieldlab">Invariance posture</span>
+        <select class="inv" id="inv-type">${L.invariance.map(i=>`<option value="${i.id}">${i.label}</option>`).join('')}</select></div>
+      <div class="two"><div><span class="fieldlab">Response A (baseline identity)</span><textarea class="pi" id="pi-a" placeholder="Paste response A…"></textarea></div>
+      <div><span class="fieldlab">Response B (varied identity)</span><textarea class="pi" id="pi-b" placeholder="Paste response B…"></textarea></div></div>`;
+  } else {
+    const retr = L.mode==='text' ? `
+      <div class="retrieval">
+        <span class="sl" style="margin-bottom:0.35rem">Pull live evidence — no pasting</span>
+        <div class="retr-row">
+          <input id="retr-q" class="retr-in" placeholder="e.g. ALK+ NSCLC lorlatinib resistance" onkeydown="if(event.key==='Enter')fetchEvidence()">
+          <select id="retr-src" class="retr-src"><option value="pubmed">PubMed</option><option value="trials">ClinicalTrials.gov</option></select>
+          <button class="retr-btn" onclick="fetchEvidence()">Fetch ▸</button>
+        </div>
+        <div id="retr-results" class="retr-results"></div>
+      </div>` : '';
+    z.innerHTML=`${retr}<span class="sl">${L.inputLabel}</span><textarea class="pi" id="pi" placeholder="${L.placeholder}" oninput="uwc()"></textarea><div class="wc" id="wc">No text entered</div>`;
+  }
+}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+let RETR=[];
+async function fetchEvidence(){
+  const qi=document.getElementById('retr-q'); const q=(qi&&qi.value||'').trim(); if(!q)return;
+  const src=document.getElementById('retr-src').value;
+  const box=document.getElementById('retr-results');
+  box.innerHTML=`<div class="retr-load">Searching ${src==='pubmed'?'PubMed':'ClinicalTrials.gov'}<span class="ld"></span></div>`;
+  try{
+    const r=await fetch('/retrieve/'+src+'?q='+encodeURIComponent(q)+'&n=6');
+    const d=await r.json();
+    if(d.error){box.innerHTML=`<div class="err">${esc(d.error)}</div>`;return;}
+    RETR=d.results||[];
+    if(!RETR.length){box.innerHTML=`<div class="retr-empty">No results — try different or broader terms.</div>`;return;}
+    box.innerHTML=RETR.map((x,i)=>`<div class="retr-card" onclick="loadEvidence(${i})"><div class="retr-t">${esc(x.title)}</div><div class="retr-m">${esc(x.source)}${x.meta?' · '+esc(x.meta):''}${x.abstract?'':' · <em>no abstract text</em>'}</div></div>`).join('');
+  }catch(e){box.innerHTML=`<div class="err">${esc(e.message)} — is the server running (node server.js)?</div>`;}
+}
+function loadEvidence(i){
+  const x=RETR[i]; if(!x)return;
+  const ta=document.getElementById('pi'); if(!ta)return;
+  ta.value=(x.title?x.title+'\n\n':'')+(x.abstract||'');
+  uwc();
+  document.querySelectorAll('.retr-card').forEach((c,j)=>c.classList.toggle('sel',j===i));
+  ta.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function uwc(){const t=document.getElementById('pi').value;const w=t.trim()?t.trim().split(/\s+/).length:0;const el=document.getElementById('wc');if(el)el.textContent=w?w+' words':'No text entered';}
+
+/* ---- VIEWS + KEYS + MODELS ---------------------------------------------- */
+function showView(v){['evaluate','pipeline','settings'].forEach(x=>{document.getElementById('view-'+x).style.display=x===v?'':'none';document.getElementById('tab-'+x).classList.toggle('active',x===v);document.getElementById('nav-'+x).classList.toggle('active',x===v);});if(v==='settings'){loadKeys();populateModels();}if(v==='pipeline'){renderPrograms();}}
+function loadKeys(){['anthropic','openai','gemini'].forEach(k=>{const el=document.getElementById('sk-'+k);if(el)el.value=gk(k);ukst(k);});}
+function ukst(k){const v=gk(k)||((document.getElementById('sk-'+k)||{}).value||'').trim();const el=document.getElementById('kst-'+k);if(el){el.textContent=v?'✓ Set':'Not set';el.className='kst '+(v?'ok':'miss');}}
+function saveKeys(){['anthropic','openai','gemini'].forEach(k=>{const v=(document.getElementById('sk-'+k).value||'').trim();if(v)localStorage.setItem('jk-'+k,v);else localStorage.removeItem('jk-'+k);ukst(k);});const m=document.getElementById('savedmsg');m.classList.add('show');setTimeout(()=>m.classList.remove('show'),2000);}
+function populateModels(){['anthropic','openai','gemini'].forEach(p=>{const sel=document.getElementById('m-'+p);if(!sel)return;const cur=getModel(p);sel.innerHTML=MODELS[p].options.map(o=>`<option value="${o.id}"${o.id===cur?' selected':''}>${o.label} — ${o.tier}</option>`).join('');});}
+function onModelChange(p){const sel=document.getElementById('m-'+p);if(sel)setModel(p,sel.value);}
+
+/* ============================================================================
+   PIPELINE MONITOR — the continuous go/no-go loop, made visible.
+   Deterministic demo stream so the loop runs without keys; each cycle shows the
+   advocate ⇄ skeptic duel, Adrian verdict, the verifier check, and fires an
+   alert whenever the verdict MOVES.
+   ========================================================================== */
+const VMETA={GO:{k:'vGO',c:'#1D9E75',i:'▲'},HOLD:{k:'vHOLD',c:'#EF9F27',i:'‖'},KILL:{k:'vKILL',c:'#D85A30',i:'▼'},WATCH:{k:'vWATCH',c:'#6b6f9e',i:'◦'}};
+const PROGRAMS=[
+  {id:'ALK-071',name:'ALK-071 · 4th-gen inhibitor',sub:'Post-lorlatinib resistance · Phase 1',precedent:'Programs entering Phase 2 on single-arm PFS in this setting: ~31% advanced past Phase 2.',cycles:[
+    {ev:'Baseline dossier: potent in vitro vs G1202R; clean early safety; single-arm PFS signal.',verdict:'GO',conv:74,adv:'Strong biochemical potency against the dominant post-lorlatinib mutation, tolerable early safety — a real advancement case.',skp:'Efficacy rests on a single-arm signal with no comparator; resistance breadth untested.'},
+    {ev:'New competitor readout: rival 4th-gen agent shows only 3.2mo PFS in the same population.',verdict:'HOLD',conv:52,adv:'Our potency profile still differs; not a direct read-across.',skp:'The closest comparator just underwhelmed in exactly this setting — the efficacy bar looks higher than assumed.'},
+    {ev:'ctDNA from expansion cohort: compound-mutation (G1202R+L1196M) emerging at progression.',verdict:'KILL',conv:23,adv:'Could pursue a narrower biomarker-selected subset.',skp:'Compound mutations predict rapid escape; the addressable population is collapsing. This is the classic late-Phase-2 failure signature — kill now, save the Phase 2 spend.'},
+  ]},
+  {id:'ALK-114',name:'ALK-114 · CNS-penetrant combo',sub:'1L CNS-active · Phase 1b',precedent:'CNS-active programs with a validated selection biomarker: ~58% advanced past Phase 2.',cycles:[
+    {ev:'Baseline: promising CNS penetration in preclinical models; no human efficacy yet.',verdict:'WATCH',conv:46,adv:'Addresses the CNS sanctuary gap that limits current agents.',skp:'No human data; CNS penetration has not translated before. Wait.'},
+    {ev:'Phase 1b: intracranial ORR 61%; durable at 9 months in first cohort.',verdict:'HOLD',conv:63,adv:'Intracranial response is the exact unmet need — this is a differentiated signal.',skp:'Small cohort, selection effects possible. Encouraging, not decisive.'},
+    {ev:'Biomarker: EML4-ALK variant 1 enriches responders; ctDNA clearance tracks response.',verdict:'GO',conv:81,adv:'A response-linked selection biomarker plus intracranial durability — a defensible, well-powered Phase 2 is now designable. Build conviction and move.',skp:'Confirm biomarker cutoff prospectively; otherwise the case is strong.'},
+  ]},
+  {id:'ALK-203',name:'ALK-203 · biomarker-selected 2L',sub:'Second-line · Phase 2 design',precedent:'Ambiguous single-model verdicts historically split ~50/50 — expert review changed the call 40% of the time.',cycles:[
+    {ev:'Baseline: moderate ORR, biomarker strategy defined but unproven prospectively.',verdict:'HOLD',conv:55,adv:'Coherent biomarker hypothesis and an acceptable safety base.',skp:'Efficacy is middling and the biomarker is retrospective.'},
+    {ev:'Mixed evidence: one cohort improves, another flat; models disagree (spread ±1.3).',verdict:'HOLD',conv:50,adv:'The responder subset is real and could define the trial.',skp:'Heterogeneity could be noise; the flat cohort is a warning.'},
+    {ev:'Signal remains ambiguous after the new cohort — no dominant read.',verdict:'HOLD',conv:49,adv:'Worth a tightly-scoped, biomarker-gated Phase 2.',skp:'Equally readable as a weak asset. This is where Adrian defers: low model agreement → route to a domain expert, do not auto-decide.'},
+  ]},
+];
+let pipeState={};
+function initPipe(){pipeState={};PROGRAMS.forEach(p=>pipeState[p.id]={i:0});}
+function renderPrograms(){
+  document.getElementById('programs').innerHTML=PROGRAMS.map(p=>{
+    const st=pipeState[p.id], cyc=p.cycles[st.i], vm=VMETA[cyc.verdict];
+    const ticks=p.cycles.map((_,k)=>`<div class="tk ${k<st.i?'done':k===st.i?'now':''}"></div>`).join('');
+    return `<div class="prog"><div class="prog-h"><div><div class="pn">${p.name}</div><div class="ps">${p.sub}</div></div>
+      <div class="vbadge ${vm.k}">${vm.i} ${cyc.verdict} · conviction ${cyc.conv}%</div></div>
+      <div class="prog-b">
+        <div class="tl">${ticks}</div>
+        <div class="conv"><span class="cl2">Conviction</span><div class="cbar2"><div class="cf2" style="width:${cyc.conv}%;background:${vm.c}"></div></div><span class="cl2">${cyc.conv}%</span></div>
+        <div class="ev"><b>New evidence (cycle ${st.i+1}/${p.cycles.length}):</b> ${cyc.ev}</div>
+        <div class="duel"><div class="side adv"><div class="sh">▲ Advocate — case to advance</div><div class="st">${cyc.adv}</div></div>
+          <div class="side skp"><div class="sh">▼ Skeptic — case to kill</div><div class="st">${cyc.skp}</div></div></div>
+        <div class="verdict-line"><b style="color:${vm.c}">Judge verdict: ${cyc.verdict}.</b> Adjudicated from the evidence above; conviction ${cyc.conv}%.
+          <div class="verify">✓ Verifier: no unsupported claims or cherry-picking detected in this verdict. ${p.precedent}</div></div>
+      </div></div>`;
+  }).join('');
+}
+function pushAlert(prog,from,to,conv){
+  const good=(to==='GO'), rail=document.getElementById('alert-rail');
+  const dir = to==='KILL'?'Fail fast triggered':to==='GO'?'Conviction reached':'Verdict moved';
+  const el=document.createElement('div'); el.className='alert'+(good?' good':'');
+  el.innerHTML=`<span class="ai2" style="color:${VMETA[to].c}">● ${dir}</span><span class="at2"><b>${prog.name}</b>: verdict moved ${from} → <b>${to}</b> (conviction ${conv}%). ${to==='KILL'?'Recommend halting before Phase 2 spend — the evidence turned against the thesis.':to==='GO'?'Evidence now supports a well-powered advance.':'Surfaced for review — the evidence shifted.'}</span>`;
+  rail.prepend(el);
+}
+function stepProgram(p){
+  const st=pipeState[p.id]; if(st.i>=p.cycles.length-1)return false;
+  const prev=p.cycles[st.i].verdict; st.i++; const now=p.cycles[st.i];
+  if(now.verdict!==prev)pushAlert(p,prev,now.verdict,now.conv);
+  return true;
+}
+function stepAll(){let moved=false;PROGRAMS.forEach(p=>{if(stepProgram(p))moved=true});renderPrograms();if(!moved)pushInfo();}
+function pushInfo(){const rail=document.getElementById('alert-rail');const el=document.createElement('div');el.className='alert good';el.innerHTML='<span class="ai2" style="color:#1D9E75">● Monitoring</span><span class="at2">All programs at end of demo evidence stream. In production the loop keeps running as new papers, trials, and readouts land.</span>';rail.prepend(el);}
+function playAll(){resetPipe();let n=0;const iv=setInterval(()=>{stepAll();if(++n>=PROGRAMS[0].cycles.length-1){clearInterval(iv);}},1100);}
+function resetPipe(){document.getElementById('alert-rail').innerHTML='';initPipe();renderPrograms();}
+
+/* ---- THEME (light / dark) ------------------------------------------------ */
+function curTheme(){const a=document.documentElement.getAttribute('data-theme');if(a)return a;return (window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';}
+function applyTheme(t){const r=document.documentElement;if(t==='light'||t==='dark')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme');const b=document.getElementById('theme-toggle');if(b)b.textContent=curTheme()==='dark'?'☀':'☾';}
+function toggleTheme(){const next=curTheme()==='dark'?'light':'dark';try{localStorage.setItem('jtheme',next)}catch(e){}applyTheme(next);}
+function initTheme(){let s=null;try{s=localStorage.getItem('jtheme')}catch(e){}applyTheme(s||'system');}
+
+/* ---- INIT ---------------------------------------------------------------- */
+initTheme(); buildLensList(); setLens('catalyze'); initPipe();
+</script>
+</body>
+</html>
