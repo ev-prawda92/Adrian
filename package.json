@@ -1,15 +1,19 @@
 {
   "name": "adrian-platform",
   "version": "1.0.0",
-  "description": "Adrian — unified scientific/decision inference platform. One engine, multiple domain lenses: Catalyze (drug discovery), Equity Lens (counterfactual fairness), Sendero (build-vs-training). Operation Mincemeat LLC.",
+  "description": "Adrian \u2014 unified scientific/decision inference platform. One engine, multiple domain lenses: Catalyze (drug discovery), Equity Lens (counterfactual fairness), Sendero (build-vs-training). Operation Mincemeat LLC.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "node-fetch": "^2.7.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

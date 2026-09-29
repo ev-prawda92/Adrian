@@ -28,8 +28,9 @@ or noise?* That shared idea is the platform's moat.
 ## Setup
 
 ```bash
-npm install      # only if node_modules isn't already present
+npm install
 node server.js
+npm test         # starts the server and checks its routes
 ```
 
 Open **http://localhost:3001**
@@ -38,7 +39,7 @@ Open **http://localhost:3001**
 - **Catalyze / Equity Lens** need an Anthropic key (Settings ⚙). Add OpenAI/Gemini keys to enable
   cross-model consensus on Catalyze.
 
-Model IDs default to real, current models (`claude-sonnet-4`, `gpt-4o`, `gemini-2.0-flash`).
+Model IDs are set per vendor in Settings.
 
 ---
 
